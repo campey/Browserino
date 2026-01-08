@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import ServiceManagement
 
 struct SettingsDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
@@ -33,6 +34,7 @@ struct SettingsDocument: FileDocument {
 
 struct GeneralTab: View {
     @State private var isDefault = false
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var showingExportPicker = false
     @State private var showingImportPicker = false
     @State private var exportDocument = SettingsDocument()
@@ -178,15 +180,7 @@ struct GeneralTab: View {
                             .font(.callout)
                             .opacity(0.5)
                     }
-                }
-            }
-            
-            HStack(alignment: .top, spacing: 32) {
-                Text("Menu Bar")
-                    .font(.headline)
-                    .frame(width: 200, alignment: .trailing)
-                
-                VStack(alignment: .leading) {
+                    
                     Toggle(isOn: $showInMenuBar) {
                         Text("Show Browserino in menu bar")
                             .font(.callout)
@@ -195,6 +189,31 @@ struct GeneralTab: View {
                 }
             }
             
+            HStack(alignment: .top, spacing: 32) {
+                Text("Startup")
+                    .font(.headline)
+                    .frame(width: 200, alignment: .trailing)
+
+                VStack(alignment: .leading) {
+                    Toggle(isOn: $launchAtLogin) {
+                        Text("Launch Browserino at login")
+                            .font(.callout)
+                            .opacity(0.5)
+                    }
+                    .onChange(of: launchAtLogin) { newValue in
+                        do {
+                            if newValue {
+                                try SMAppService.mainApp.register()
+                            } else {
+                                try SMAppService.mainApp.unregister()
+                            }
+                        } catch {
+                            launchAtLogin = SMAppService.mainApp.status == .enabled
+                        }
+                    }
+                }
+            }
+
             HStack(alignment: .top, spacing: 32) {
                 Text("Import/Export")
                     .font(.headline)
