@@ -70,3 +70,62 @@ xcodebuild -project Browserino.xcodeproj -scheme Browserino \
   build CODE_SIGNING_ALLOWED=NO
 # Launches from ~/Library/Developer/Xcode/DerivedData/Browserino-*/Build/Products/Debug/
 ```
+
+## Signed release & Homebrew distribution
+
+For running this fork on *other* Macs without copy-pasting the bundle around, the
+app is Developer ID-signed + Apple-notarized and distributed as a Homebrew cask in
+`tmepple/homebrew-tap`. Notarization is an automated malware scan (not App Review) —
+it takes minutes, has no human approval step, and once the ticket is **stapled** the
+app launches on any Mac with no Gatekeeper prompt and no `xattr` fiddling.
+
+The whole flow is one task: `mise run release [build-date]` (see `.mise/tasks/release.sh`).
+It builds → signs (Developer ID, hardened runtime, secure timestamp) → notarizes →
+staples → cuts a GitHub release on the fork → rewrites `Casks/browserino-tme.rb` in the tap.
+
+### One-time setup (per machine that cuts releases)
+
+1. **Developer ID Application cert** (EPCO Concepts team): Xcode → Settings → Accounts →
+   EPCO Concepts → Manage Certificates → **+** → *Developer ID Application*. The release
+   task auto-detects the identity and team id from the installed cert — nothing is hardcoded.
+2. **App Store Connect API key** for `notarytool` — created on **appstoreconnect.apple.com**
+   (not Xcode, not developer.apple.com): Users and Access → **Integrations** tab → App Store
+   Connect API → **Team Keys** → **+** (role *Developer* is sufficient). Download the `.p8`
+   once (no re-download); note the **Key ID** and the **Issuer ID** (top of the Keys page).
+   This is a **team-wide** credential — one key notarizes any EPCO app, so it's stored
+   generically and reused, not per-app.
+3. **Store it in 1Password** (item `EPCO-ASC-API`, vault `Private`, **personal account**):
+   ```bash
+   op item create --account epples.1password.com \
+     --category="API Credential" --title="EPCO-ASC-API" --vault=Private \
+     issuer="<ISSUER_ID>" key-id="<KEY_ID>" key="$(cat AuthKey_<KEY_ID>.p8)"
+   ```
+   The task reads `op://Private/EPCO-ASC-API/{issuer,key-id,key}`, renders the `.p8`
+   to a temp file for the duration of one `notarytool` call, and removes it on exit
+   (never persisted to disk plaintext). Secret references have no account component, so
+   when multiple 1Password accounts are signed in the task scopes all `op` calls via
+   `OP_ACCOUNT` (default `epples.1password.com`; override by exporting `OP_ACCOUNT`).
+
+### Versioning
+
+`MARKETING_VERSION` stays at the upstream value (no `project.pbxproj` edits). The tag and
+cask carry the fork build date: **`<upstream>-tme.<YYYYMMDD>`** (e.g. `1.1.16-tme.20260601`),
+so `brew upgrade` detects a new fork build even when the upstream version is unchanged. The
+About screen shows `Browserino v<upstream>` plus a `TME Fork · <date>` line
+(`Browserino/Views/Preferences/AboutTab.swift`) — a view-only marker with no side effects.
+
+### Installing on another Mac (declarative)
+
+The cask token is `browserino-tme` (not `browserino`) to avoid colliding with a future
+official Browserino cask in homebrew-cask. The installed bundle is still `Browserino.app`.
+
+```ruby
+# Brewfile
+tap "tmepple/tap"
+cask "browserino-tme"
+```
+
+```bash
+brew install --cask tmepple/tap/browserino-tme   # first install
+brew upgrade --cask browserino-tme               # after a new release here
+```
