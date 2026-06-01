@@ -16,7 +16,14 @@ git branch -d pr-<N>-<slug>
 
 ## Building a Release for local install
 
-The project ships with `CODE_SIGNING_ALLOWED = NO` and a hard-coded upstream `DEVELOPMENT_TEAM`, so a CLI Release build needs several overrides. **Do not edit `project.pbxproj`** — overriding on the command line keeps future upstream merges conflict-free.
+The project ships with `CODE_SIGNING_ALLOWED = NO` and a hard-coded upstream
+`DEVELOPMENT_TEAM`. Rather than fight that with sign-during-build overrides, **build the
+bundle unsigned (the project's default) and sign it afterward.** The project pins
+`"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Don't Code Sign"`, and that SDK-conditional setting
+can't be reliably overridden on the `xcodebuild` command line — the `=` inside the brackets
+gets mis-parsed (the value comes through as `macosx*]=...`), so a sign-during-build
+invocation fails with *"No certificate for team … matching …"*. **Do not edit
+`project.pbxproj`** — keeping it untouched keeps future upstream merges conflict-free.
 
 Ad-hoc signing is the right choice for a personal install on this Mac: locally-built apps have no `com.apple.quarantine` xattr, so Gatekeeper doesn't intervene, and no Apple Developer account / provisioning profile is required.
 
@@ -25,19 +32,14 @@ rm -rf build
 xcodebuild -project Browserino.xcodeproj -scheme Browserino \
   -configuration Release -destination 'platform=macOS' \
   -derivedDataPath build \
-  CODE_SIGNING_ALLOWED=YES \
-  CODE_SIGN_STYLE=Manual \
-  "CODE_SIGN_IDENTITY[sdk=macosx*]=-" \
-  "DEVELOPMENT_TEAM[sdk=macosx*]=" \
-  CODE_SIGN_IDENTITY="-" \
-  DEVELOPMENT_TEAM="" \
-  build
+  build CODE_SIGNING_ALLOWED=NO
+
+# ad-hoc sign the finished bundle — no nested frameworks/helpers, so one pass is complete:
+codesign --force -s - build/Build/Products/Release/Browserino.app
 ```
 
-Why each override is needed:
-- `CODE_SIGNING_ALLOWED=YES` — overrides the project's `= NO`, which otherwise disables all signing and silently produces an unsigned bundle.
-- `CODE_SIGN_IDENTITY=-` (both plain **and** `[sdk=macosx*]`) — selects ad-hoc. The SDK-conditional `"Don't Code Sign"` in the project beats a plain override, so both forms are required.
-- `DEVELOPMENT_TEAM=""` (both forms) — clears the upstream author's team id so the signing system doesn't try to validate the ad-hoc identity against it.
+(The notarized release task in `.mise/tasks/release.sh` uses the same build-unsigned-then-
+`codesign` flow, just with the Developer ID identity plus `--options runtime --timestamp`.)
 
 Verify the result:
 
