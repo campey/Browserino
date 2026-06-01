@@ -18,9 +18,12 @@ TAP_NAME="tmepple/tap"                    # brew-facing tap name
 BUNDLE_ID="xyz.alexstrnik.Browserino"
 SCHEME="Browserino"
 PROJECT="Browserino.xcodeproj"
-OP_ITEM="op://Private/EPCO-ASC-API"       # shared EPCO App Store Connect API key; adjust vault if needed
-# The item lives in the personal 1Password account, not the work account that may also be
-# signed in. op has no per-reference account syntax, so scope all op calls via OP_ACCOUNT.
+OP_VAULT="Private"
+OP_ITEM="op://${OP_VAULT}/EPCO-ASC-API"   # holds the issuer + key-id fields (single-line values)
+OP_KEY_DOC="EPCO-ASC-API-key"             # the .p8 private key, stored as a 1Password *document*
+                                          # (a text field flattens the PEM newlines -> invalidPEMDocument)
+# The credential lives in the personal 1Password account, not the work account that may also
+# be signed in. op has no per-reference account syntax, so scope all op calls via OP_ACCOUNT.
 export OP_ACCOUNT="${OP_ACCOUNT:-epples.1password.com}"
 
 die() { echo "error: $*" >&2; exit 1; }
@@ -75,10 +78,13 @@ op whoami >/dev/null 2>&1 || die "not signed into 1Password account '$OP_ACCOUNT
 
 # ---- 2. notary credentials from 1Password (rendered to temp, removed on exit) ----
 P8="$(mktemp -t browserino-notary)"
-op read "${OP_ITEM}/key" > "$P8" || die "could not read ${OP_ITEM}/key"
+op document get "$OP_KEY_DOC" --vault "$OP_VAULT" > "$P8" \
+  || die "could not read document '$OP_KEY_DOC' from vault '$OP_VAULT'"
 KEY_ID="$(op read "${OP_ITEM}/key-id")"
 ISSUER_ID="$(op read "${OP_ITEM}/issuer")"
 [[ -s "$P8" && -n "$KEY_ID" && -n "$ISSUER_ID" ]] || die "incomplete notary credentials in 1Password"
+head -1 "$P8" | grep -q "BEGIN PRIVATE KEY" \
+  || die "document '$OP_KEY_DOC' is not a valid .p8 PEM (first line: $(head -1 "$P8"))"
 
 # ---- 3. build unsigned, then sign with Developer ID ----
 # The project pins CODE_SIGN_IDENTITY[sdk=macosx*] = "Don't Code Sign", and SDK-conditional

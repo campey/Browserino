@@ -94,17 +94,26 @@ staples → cuts a GitHub release on the fork → rewrites `Casks/browserino-tme
    once (no re-download); note the **Key ID** and the **Issuer ID** (top of the Keys page).
    This is a **team-wide** credential — one key notarizes any EPCO app, so it's stored
    generically and reused, not per-app.
-3. **Store it in 1Password** (item `EPCO-ASC-API`, vault `Private`, **personal account**):
+3. **Store the credential in 1Password** (vault `Private`, **personal account**). The `.p8`
+   must be a **document**, not a text field — pasting a PEM into a text field flattens its
+   newlines and notarytool then rejects it with `invalidPEMDocument`.
    ```bash
+   # issuer + key id — single-line values, fine as fields:
    op item create --account epples.1password.com \
      --category="API Credential" --title="EPCO-ASC-API" --vault=Private \
-     issuer="<ISSUER_ID>" key-id="<KEY_ID>" key="$(cat AuthKey_<KEY_ID>.p8)"
+     issuer="<ISSUER_ID>" key-id="<KEY_ID>"
+   # the private key — byte-exact, as a document titled EPCO-ASC-API-key:
+   op document create AuthKey_<KEY_ID>.p8 --account epples.1password.com \
+     --title="EPCO-ASC-API-key" --vault=Private
    ```
-   The task reads `op://Private/EPCO-ASC-API/{issuer,key-id,key}`, renders the `.p8`
-   to a temp file for the duration of one `notarytool` call, and removes it on exit
-   (never persisted to disk plaintext). Secret references have no account component, so
-   when multiple 1Password accounts are signed in the task scopes all `op` calls via
-   `OP_ACCOUNT` (default `epples.1password.com`; override by exporting `OP_ACCOUNT`).
+   (Either command can be done in the 1Password GUI instead — for the key, New Item →
+   Document → upload the `.p8` → title `EPCO-ASC-API-key`.)
+
+   The task reads `op://Private/EPCO-ASC-API/{issuer,key-id}` plus `op document get
+   EPCO-ASC-API-key`, renders the `.p8` to a temp file for the duration of one `notarytool`
+   call, and removes it on exit (never persisted to disk plaintext). Secret references have
+   no account component, so when multiple 1Password accounts are signed in the task scopes
+   all `op` calls via `OP_ACCOUNT` (default `epples.1password.com`; override by exporting it).
 
 ### Versioning
 
