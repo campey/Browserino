@@ -63,7 +63,9 @@ EOF
   exit 1
 fi
 TEAM_ID="$(echo "$DEVID_LINE" | sed -E 's/.*\(([A-Z0-9]+)\)".*/\1/')"
+IDENTITY_SHA="$(echo "$DEVID_LINE" | awk '{print $2}')"
 [[ -n "$TEAM_ID" ]] || die "could not parse team id from: $DEVID_LINE"
+[[ "$IDENTITY_SHA" =~ ^[A-F0-9]{40}$ ]] || die "could not parse identity SHA from: $DEVID_LINE"
 echo "Identity: $DEVID_LINE"
 echo "Team:     $TEAM_ID"
 echo "Version:  $VERSION"
@@ -78,26 +80,29 @@ KEY_ID="$(op read "${OP_ITEM}/key-id")"
 ISSUER_ID="$(op read "${OP_ITEM}/issuer")"
 [[ -s "$P8" && -n "$KEY_ID" && -n "$ISSUER_ID" ]] || die "incomplete notary credentials in 1Password"
 
-# ---- 3. build signed Release ----
-echo "==> Building signed Release..."
+# ---- 3. build unsigned, then sign with Developer ID ----
+# The project pins CODE_SIGN_IDENTITY[sdk=macosx*] = "Don't Code Sign", and SDK-conditional
+# build settings can't be reliably overridden on the xcodebuild command line (the '=' inside
+# the brackets gets mis-parsed). So build unsigned — known-good, same as the Debug build —
+# and sign the bundle directly. No nested frameworks/helpers, so one pass is complete.
+echo "==> Building (unsigned)..."
 rm -rf build
 xcodebuild -project "$PROJECT" -scheme "$SCHEME" \
   -configuration Release -destination 'platform=macOS' \
   -derivedDataPath build \
-  CODE_SIGNING_ALLOWED=YES \
-  CODE_SIGN_STYLE=Manual \
-  CODE_SIGN_IDENTITY="Developer ID Application" \
-  "CODE_SIGN_IDENTITY[sdk=macosx*]=Developer ID Application" \
-  DEVELOPMENT_TEAM="$TEAM_ID" \
-  "DEVELOPMENT_TEAM[sdk=macosx*]=$TEAM_ID" \
-  OTHER_CODE_SIGN_FLAGS="--timestamp" \
-  build
+  build CODE_SIGNING_ALLOWED=NO
 
 APP="$ROOT/build/Build/Products/Release/Browserino.app"
 [[ -d "$APP" ]] || die "build did not produce $APP"
 
+echo "==> Signing with Developer ID (hardened runtime + secure timestamp)..."
+codesign --force --options runtime --timestamp \
+  --entitlements "Browserino/Browserino.entitlements" \
+  --sign "$IDENTITY_SHA" \
+  "$APP"
+
 echo "==> Verifying signature..."
-codesign --verify --deep --strict --verbose=2 "$APP"
+codesign --verify --strict --verbose=2 "$APP"
 
 # ---- 4. notarize + staple ----
 WORK="$(mktemp -d)"
