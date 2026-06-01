@@ -21,7 +21,12 @@ struct AboutTab: View {
             )
             .font(.title)
             .frame(maxWidth: .infinity)
-            
+
+            Text("TME Fork · 2026-06-01")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+
             Spacer()
                 .frame(height: 16)
             
