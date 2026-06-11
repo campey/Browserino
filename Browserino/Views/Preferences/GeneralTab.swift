@@ -43,7 +43,6 @@ struct GeneralTab: View {
     @AppStorage("copy_alternativeShortcut") private var alternativeShortcut: Bool = false
     @AppStorage("showInMenuBar") private var showInMenuBar: Bool = true
     @AppStorage("apps_atTop") private var appsAtTop: Bool = true
-    
     func defaultBrowser() -> String? {
         guard let browserUrl = NSWorkspace.shared.urlForApplication(toOpen: URL(string: "https:")!) else {
             return nil

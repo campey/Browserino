@@ -94,7 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc func openPreferences() {
         if preferencesWindow == nil {
             preferencesWindow = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 700, height: 500),
+                contentRect: NSRect(x: 0, y: 0, width: 780, height: 500),
                 styleMask: [.miniaturizable, .closable, .resizable, .titled],
                 backing: .buffered,
                 defer: false
@@ -108,7 +108,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         preferencesWindow!.isReleasedWhenClosed = false
         preferencesWindow!.titlebarAppearsTransparent = true
         
-        preferencesWindow!.contentMinSize = NSSize(width: 700, height: 500)
+        preferencesWindow!.contentMinSize = NSSize(width: 780, height: 500)
         
         preferencesWindow!.collectionBehavior = [.moveToActiveSpace, .fullScreenNone]
         
@@ -157,7 +157,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if selectorWindow == nil {
             selectorWindow = BrowserinoWindow()
         }
-        
+
+        let twoColumns = UserDefaults.standard.bool(forKey: "twoColumnBrowsers")
+        let targetWidth: CGFloat = twoColumns ? BrowserinoWindow.twoColumnWidth : BrowserinoWindow.selectorWidth
+        if abs(selectorWindow!.frame.width - targetWidth) > 1 {
+            selectorWindow!.minSize = NSSize(width: targetWidth, height: BrowserinoWindow.selectorHeight)
+            selectorWindow!.setContentSize(NSSize(width: targetWidth, height: selectorWindow!.frame.height))
+        }
+
         let screen = getScreenWithMouse()!.visibleFrame
         
         selectorWindow?.setFrameOrigin(
