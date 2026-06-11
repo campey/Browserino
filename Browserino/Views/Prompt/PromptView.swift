@@ -124,7 +124,7 @@ struct PromptView: View {
     @AppStorage("url_atTop") private var urlAtTop: Bool = false
     @AppStorage("twoColumnBrowsers") private var twoColumnBrowsers: Bool = false
     @AppStorage("resolveRedirects") private var resolveRedirects: Bool = false
-    @AppStorage("phishingDetectionEnabled") private var phishingDetectionEnabled: Bool = true
+    @AppStorage("phishingDetectionEnabled") private var phishingDetectionEnabled: Bool = false
     @AppStorage("phishingBlocklist") private var phishingBlocklist: [String] = []
 
     let urls: [URL]

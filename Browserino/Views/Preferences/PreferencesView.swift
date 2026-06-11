@@ -73,11 +73,10 @@ struct PreferencesView: View {
 }
 
 struct PhishingTab: View {
-    @AppStorage("phishingDetectionEnabled") private var phishingDetectionEnabled: Bool = true
+    @AppStorage("phishingDetectionEnabled") private var phishingDetectionEnabled: Bool = false
     @AppStorage("phishingBlocklist") private var phishingBlocklist: [String] = []
     @AppStorage("showUrlPreview") private var showUrlPreview: Bool = false
     @AppStorage("resolveRedirects") private var resolveRedirects: Bool = false
-    @AppStorage("url_atTop") private var urlAtTop: Bool = false
 
     @State private var newDomain: String = ""
 
@@ -116,12 +115,6 @@ struct PhishingTab: View {
                                 .opacity(0.5)
                         }
                         .disabled(!showUrlPreview)
-
-                        Toggle(isOn: $urlAtTop) {
-                            Text("Show URL above browser list")
-                                .font(.callout)
-                                .opacity(0.5)
-                        }
                     }
                 }
 
@@ -162,11 +155,6 @@ struct PhishingTab: View {
                 }
             }
             .padding(20)
-        }
-        .onAppear {
-            if phishingBlocklist.isEmpty {
-                phishingBlocklist = PhishingDetector.builtInPatterns.map(\.domain)
-            }
         }
     }
 

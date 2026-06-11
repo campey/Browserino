@@ -43,6 +43,8 @@ struct GeneralTab: View {
     @AppStorage("copy_alternativeShortcut") private var alternativeShortcut: Bool = false
     @AppStorage("showInMenuBar") private var showInMenuBar: Bool = true
     @AppStorage("apps_atTop") private var appsAtTop: Bool = true
+    @AppStorage("url_atTop") private var urlAtTop: Bool = false
+
     func defaultBrowser() -> String? {
         guard let browserUrl = NSWorkspace.shared.urlForApplication(toOpen: URL(string: "https:")!) else {
             return nil
@@ -185,9 +187,15 @@ struct GeneralTab: View {
                             .font(.callout)
                             .opacity(0.5)
                     }
+
+                    Toggle(isOn: $urlAtTop) {
+                        Text("Show URL above browser list")
+                            .font(.callout)
+                            .opacity(0.5)
+                    }
                 }
             }
-            
+
             HStack(alignment: .top, spacing: 32) {
                 Text("Startup")
                     .font(.headline)
