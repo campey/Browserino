@@ -8,21 +8,30 @@
 import SwiftUI
 
 struct AboutTab: View {
+    private var buildTimestamp: String {
+        guard let url = Bundle.main.executableURL,
+              let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let date = attrs[.modificationDate] as? Date else { return "unknown" }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd HH:mm"
+        return fmt.string(from: date)
+    }
+
     var body: some View {
         VStack {
             Spacer()
-            
+
             Image(nsImage: NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath))
                 .resizable()
                 .frame(width: 128, height: 128)
-            
+
             Text(
                 "Browserino v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String)"
             )
             .font(.title)
             .frame(maxWidth: .infinity)
 
-            Text("TME Fork · 2026-06-01")
+            Text("TME / campey fork · built \(buildTimestamp)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
