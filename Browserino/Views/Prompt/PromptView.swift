@@ -260,26 +260,25 @@ struct PromptView: View {
 
             Divider()
 
-            if let host = urls.first?.host() {
+            if let url = urls.first, let host = url.host() {
+                let displayHost = url.port.map { "\(host):\($0)" } ?? host
                 Button(action: {
                     let pasteboard = NSPasteboard.general
                     pasteboard.declareTypes([.string], owner: nil)
-                    pasteboard.setString(urls.first?.absoluteString ?? "", forType: .string)
+                    pasteboard.setString(url.absoluteString, forType: .string)
 
                     if closeAfterCopy {
                         NSApplication.shared.keyWindow?.close()
                     }
                 }) {
-                    Text(
-                        host
-                    )
+                    Text(displayHost)
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut(
                     KeyEquivalent("c"),
                     modifiers: alternativeShortcut ? [.command] : [.command, .option]
                 )
-                .toolTip(urls.first?.absoluteString ?? "")
+                .toolTip(url.absoluteString)
             }
         }
         .padding(12)
