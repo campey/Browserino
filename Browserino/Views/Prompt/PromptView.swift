@@ -296,7 +296,7 @@ struct PromptView: View {
                             NSApplication.shared.keyWindow?.close()
                         }
                     }) {
-                        Text(host)
+                        Text(displayURL.port.map { "\(host):\($0)" } ?? host)
                     }
                     .buttonStyle(.plain)
                     .keyboardShortcut(
