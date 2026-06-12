@@ -10,7 +10,6 @@ import AppKit
 
 class BrowserinoWindow: NSPanel {
     static let selectorWidth: CGFloat = 250
-    static let twoColumnWidth: CGFloat = 500
     static let selectorHeight: CGFloat = 200
     
     public convenience init() {

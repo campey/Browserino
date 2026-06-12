@@ -122,7 +122,6 @@ struct PromptView: View {
     @AppStorage("apps_atTop") private var appsAtTop: Bool = true
     @AppStorage("showUrlPreview") private var showUrlPreview: Bool = false
     @AppStorage("url_atTop") private var urlAtTop: Bool = false
-    @AppStorage("twoColumnBrowsers") private var twoColumnBrowsers: Bool = false
     @AppStorage("resolveRedirects") private var resolveRedirects: Bool = false
     @AppStorage("phishingDetectionEnabled") private var phishingDetectionEnabled: Bool = false
     @AppStorage("phishingBlocklist") private var phishingBlocklist: [String] = []
@@ -276,12 +275,6 @@ struct PromptView: View {
         return PhishingDetector.match(host: host, userBlocklist: phishingBlocklist)
     }
 
-    private var gridColumns: [GridItem] {
-        twoColumnBrowsers
-            ? [GridItem(.flexible()), GridItem(.flexible())]
-            : [GridItem(.flexible())]
-    }
-
     @ViewBuilder
     private var urlDisplayContent: some View {
         if let displayURL = effectiveURL, let host = displayURL.host() {
@@ -296,7 +289,7 @@ struct PromptView: View {
                             NSApplication.shared.keyWindow?.close()
                         }
                     }) {
-                        Text(host)
+                        Text(displayURL.port.map { "\(host):\($0)" } ?? host)
                     }
                     .buttonStyle(.plain)
                     .keyboardShortcut(
@@ -439,7 +432,7 @@ struct PromptView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 2) {
                         if !appsForUrls.isEmpty && appsAtTop {
-                            LazyVGrid(columns: gridColumns, spacing: 2) {
+                            LazyVGrid(columns: [GridItem(.flexible())], spacing: 2) {
                                 ForEach(Array(appsForUrls.enumerated()), id: \.offset) { index, app in
                                     if let bundle = Bundle(url: app.app) {
                                         PromptItem(
@@ -463,7 +456,7 @@ struct PromptView: View {
                             Divider()
                         }
 
-                        LazyVGrid(columns: gridColumns, spacing: 2) {
+                        LazyVGrid(columns: [GridItem(.flexible())], spacing: 2) {
                             ForEach(Array(pickerBrowserItems.enumerated()), id: \.element.id) {
                                 index, item in
                                 if let bundle = Bundle(url: item.appURL) {
@@ -489,7 +482,7 @@ struct PromptView: View {
                         if !appsForUrls.isEmpty && !appsAtTop {
                             Divider()
 
-                            LazyVGrid(columns: gridColumns, spacing: 2) {
+                            LazyVGrid(columns: [GridItem(.flexible())], spacing: 2) {
                                 ForEach(Array(appsForUrls.enumerated()), id: \.offset) { index, app in
                                     if let bundle = Bundle(url: app.app) {
                                         PromptItem(

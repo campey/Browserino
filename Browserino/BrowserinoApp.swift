@@ -158,13 +158,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             selectorWindow = BrowserinoWindow()
         }
 
-        let twoColumns = UserDefaults.standard.bool(forKey: "twoColumnBrowsers")
-        let targetWidth: CGFloat = twoColumns ? BrowserinoWindow.twoColumnWidth : BrowserinoWindow.selectorWidth
-        if abs(selectorWindow!.frame.width - targetWidth) > 1 {
-            selectorWindow!.minSize = NSSize(width: targetWidth, height: BrowserinoWindow.selectorHeight)
-            selectorWindow!.setContentSize(NSSize(width: targetWidth, height: selectorWindow!.frame.height))
-        }
-
         let screen = getScreenWithMouse()!.visibleFrame
         
         selectorWindow?.setFrameOrigin(
