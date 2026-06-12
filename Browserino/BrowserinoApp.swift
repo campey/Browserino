@@ -171,8 +171,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             NSPoint(
                 x: clamp(
                     min: screen.minX + 20,
-                    max: screen.maxX - selectorWindow!.frame.width - 20,
-                    value: NSEvent.mouseLocation.x - selectorWindow!.frame.width / 2
+                    max: screen.maxX - targetWidth - 20,
+                    value: NSEvent.mouseLocation.x - targetWidth / 2
                 ),
                 y: clamp(
                     min: screen.minY + 20,
