@@ -158,14 +158,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             selectorWindow = BrowserinoWindow()
         }
         
+        let twoColumns = UserDefaults.standard.bool(forKey: "twoColumnBrowsers")
+        let targetWidth: CGFloat = twoColumns ? BrowserinoWindow.twoColumnWidth : BrowserinoWindow.selectorWidth
+        if abs(selectorWindow!.frame.width - targetWidth) > 1 {
+            selectorWindow!.minSize = NSSize(width: targetWidth, height: BrowserinoWindow.selectorHeight)
+            selectorWindow!.setContentSize(NSSize(width: targetWidth, height: selectorWindow!.frame.height))
+        }
+
         let screen = getScreenWithMouse()!.visibleFrame
-        
+
         selectorWindow?.setFrameOrigin(
             NSPoint(
                 x: clamp(
                     min: screen.minX + 20,
-                    max: screen.maxX - selectorWindow!.frame.width - 20,
-                    value: NSEvent.mouseLocation.x - selectorWindow!.frame.width / 2
+                    max: screen.maxX - targetWidth - 20,
+                    value: NSEvent.mouseLocation.x - targetWidth / 2
                 ),
                 y: clamp(
                     min: screen.minY + 20,
@@ -174,16 +181,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 )
             )
         )
-        
+
         NSApplication.shared.activate(ignoringOtherApps: true)
         selectorWindow!.deactivateDelay()
-
-        let twoColumns = UserDefaults.standard.bool(forKey: "twoColumnBrowsers")
-        let targetWidth: CGFloat = twoColumns ? BrowserinoWindow.twoColumnWidth : BrowserinoWindow.selectorWidth
-        if abs(selectorWindow!.frame.width - targetWidth) > 1 {
-            selectorWindow!.minSize = NSSize(width: targetWidth, height: BrowserinoWindow.selectorHeight)
-            selectorWindow!.setContentSize(NSSize(width: targetWidth, height: selectorWindow!.frame.height))
-        }
 
         selectorWindow!.contentView = NSHostingView(
             rootView: PromptView(
