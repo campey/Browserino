@@ -260,8 +260,11 @@ struct PromptView: View {
 
             Divider()
 
-            if let url = urls.first, let host = url.host() {
-                let displayHost = url.port.map { "\(host):\($0)" } ?? host
+            if let url = urls.first {
+                let rawHost = url.host() ?? ""
+                let displayHost = rawHost.isEmpty
+                    ? url.path(percentEncoded: false)
+                    : url.port.map { "\(rawHost):\($0)" } ?? rawHost
                 Button(action: {
                     let pasteboard = NSPasteboard.general
                     pasteboard.declareTypes([.string], owner: nil)
