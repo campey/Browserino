@@ -284,7 +284,11 @@ struct PromptView: View {
 
     @ViewBuilder
     private var urlDisplayContent: some View {
-        if let displayURL = effectiveURL, let host = displayURL.host() {
+        if let displayURL = effectiveURL {
+            let rawHost = displayURL.host() ?? ""
+            let displayLabel = rawHost.isEmpty
+                ? displayURL.path(percentEncoded: false)
+                : displayURL.port.map { "\(rawHost):\($0)" } ?? rawHost
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Button(action: {
@@ -296,7 +300,7 @@ struct PromptView: View {
                             NSApplication.shared.keyWindow?.close()
                         }
                     }) {
-                        Text(displayURL.port.map { "\(host):\($0)" } ?? host)
+                        Text(displayLabel)
                     }
                     .buttonStyle(.plain)
                     .keyboardShortcut(
